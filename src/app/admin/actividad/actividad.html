@@ -1,0 +1,33 @@
+<h1>Actividad</h1>
+<p class="suave">Quién hizo qué y cuándo. Se registra solo, no se puede editar.</p>
+
+<div class="filtros">
+  <button type="button" class="filtro" [class.activo]="filtro() === null" (click)="elegir(null)">Todas</button>
+  @for (a of acciones; track a.id) {
+    <button type="button" class="filtro" [class.activo]="filtro() === a.id" (click)="elegir(a.id)">{{ a.label }}</button>
+  }
+</div>
+
+@if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+
+<section class="panel">
+  @if (!items().length && !cargando()) {
+    <p class="suave">No hay actividad para mostrar.</p>
+  } @else {
+    @for (a of items(); track a.id) {
+      <article class="fila">
+        <span class="cuando suave">{{ fecha(a.created_at) }}</span>
+        <div>
+          <strong>{{ a.autor }}</strong> · {{ etiqueta(a) }}
+          @if (detalle(a)) { <div class="suave">{{ detalle(a) }}</div> }
+        </div>
+      </article>
+    }
+    <p class="suave">Mostrando {{ items().length }} de {{ total() }}</p>
+    @if (hayMas()) {
+      <button type="button" class="btn-fantasma" [disabled]="cargando()" (click)="cargar(false)">
+        {{ cargando() ? 'Cargando...' : 'Ver más' }}
+      </button>
+    }
+  }
+</section>

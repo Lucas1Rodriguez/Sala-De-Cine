@@ -1,0 +1,60 @@
+<h1>Candy bar</h1>
+
+<section class="panel">
+  <h2>Categorías</h2>
+  <div class="sel-generos">
+    @for (c of categorias(); track c.id) {
+      <span class="chip activo">
+        {{ c.nombre }}
+        <button type="button" class="x" (click)="borrarCategoria(c)" [attr.aria-label]="'Eliminar ' + c.nombre">✕</button>
+      </span>
+    }
+  </div>
+  <div class="buscar">
+    <input placeholder="Nueva categoría (ej: Combos dulces)" [value]="nuevaCat()"
+           (input)="nuevaCat.set($any($event.target).value)" (keydown.enter)="crearCategoria()" />
+    <button class="btn" (click)="crearCategoria()">Agregar</button>
+  </div>
+</section>
+
+<section class="panel lista">
+  <h2>Nuevo producto</h2>
+  <div class="fila">
+    <label>Nombre
+      <input [value]="nombre()" (input)="nombre.set($any($event.target).value)" placeholder="Pochoclo grande" />
+    </label>
+    <label>Categoría
+      <select (change)="categoriaId.set(+$any($event.target).value)">
+        <option value="" [selected]="categoriaId() === null" disabled>Elegí</option>
+        @for (c of categorias(); track c.id) { <option [value]="c.id">{{ c.nombre }}</option> }
+      </select>
+    </label>
+    <label>Precio ($)
+      <input type="number" min="0" [value]="precio() ?? ''" (input)="precio.set($any($event.target).valueAsNumber)" />
+    </label>
+  </div>
+
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (ok()) { <p class="ok" role="status">{{ ok() }}</p> }
+  <button class="btn" (click)="crearProducto()">Crear producto</button>
+</section>
+
+<section class="panel lista">
+  <h2>Productos</h2>
+  @for (p of productos(); track p.id) {
+    <div class="fila-peli">
+      <div class="info">
+        <strong>{{ p.nombre }}</strong>
+        <span class="suave">{{ nombreCat(p.categoria_id) }}</span>
+      </div>
+      <label class="pct">
+        <span>$</span>
+        <input type="number" min="0" [value]="p.precio" (change)="cambiarPrecio(p, $any($event.target).valueAsNumber)" />
+      </label>
+      <button class="chip estado" [class.on]="p.activo" (click)="alternar(p)">{{ p.activo ? 'Activo' : 'Inactivo' }}</button>
+      <button class="btn-fantasma peligro" (click)="borrar(p)">Borrar</button>
+    </div>
+  } @empty {
+    <p class="suave">Todavía no hay productos.</p>
+  }
+</section>

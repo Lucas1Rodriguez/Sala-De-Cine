@@ -1,0 +1,101 @@
+<h1>Funciones</h1>
+
+<section class="panel">
+  <h2>Programar película</h2>
+
+  <label>Película
+    <select (change)="peliculaId.set($any($event.target).value)">
+      <option value="" [selected]="!peliculaId()" disabled>Elegí una película</option>
+      @for (p of peliculas(); track p.id) {
+        <option [value]="p.id">{{ p.nombre }} ({{ p.duracion_min }} min)</option>
+      }
+    </select>
+  </label>
+
+  <fieldset>
+    <legend>Días de la semana</legend>
+    <div class="sel-generos">
+      @for (d of diasSemana; track d.n) {
+        <button type="button" class="chip" [class.activo]="dias().includes(d.n)" (click)="toggleDia(d.n)">{{ d.l }}</button>
+      }
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Hora</legend>
+    <div class="sel-generos">
+      @for (h of horas; track h) {
+        <button type="button" class="chip" [class.activo]="hora() === h" (click)="hora.set(h)">{{ h }}</button>
+      }
+    </div>
+    <div class="sel-generos minutos">
+      @for (m of minutos; track m) {
+        <button type="button" class="chip" [class.activo]="minuto() === m" (click)="minuto.set(m)">:{{ m < 10 ? '0' + m : m }}</button>
+      }
+    </div>
+  </fieldset>
+
+  <div class="fila">
+    <fieldset>
+      <legend>Formato</legend>
+      <div class="sel-generos">
+        @for (f of formatos; track f) {
+          <button type="button" class="chip" [class.activo]="formato() === f" (click)="formato.set(f)">{{ f }}</button>
+        }
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Idioma</legend>
+      <div class="sel-generos">
+        @for (i of idiomas; track i.v) {
+          <button type="button" class="chip" [class.activo]="idioma() === i.v" (click)="idioma.set(i.v)">{{ i.l }}</button>
+        }
+      </div>
+    </fieldset>
+  </div>
+
+  <fieldset>
+    <legend>Se proyecta durante</legend>
+    <div class="sel-generos">
+      @for (r of rangos; track r.dias) {
+        <button type="button" class="chip" [class.activo]="rango() === r.dias" (click)="rango.set(r.dias)">{{ r.l }}</button>
+      }
+    </div>
+
+    @if (estrenoFuturo(); as e) {
+      <p class="suave">La película se estrena el {{ fmtCorta(e) }}: las funciones empiezan ese día.</p>
+    }
+  </fieldset>
+
+  <label>Precio de la entrada ($)
+    <input type="number" min="0" [value]="precio() ?? ''" (input)="precio.set($any($event.target).valueAsNumber)" />
+  </label>
+
+  @if (resumen()) { <p class="resumen">{{ resumen() }}</p> }
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (ok()) { <p class="ok" role="status">{{ ok() }}</p> }
+
+  <button class="btn" (click)="crear()" [disabled]="guardando()">
+    {{ guardando() ? 'Asignando salas...' : 'Crear funciones' }}
+  </button>
+</section>
+
+<section class="panel lista">
+  <h2>Próximas funciones</h2>
+  @for (f of funciones(); track f.id) {
+    <div class="fila-peli">
+      <div class="info">
+        <strong>{{ f.peliculas.nombre }}</strong>
+        <span class="suave">{{ fmt(f.inicio) }} · {{ f.salas.nombre }} · {{ f.formato }} · {{ f.idioma }}</span>
+      </div>
+      @if (f.cancelada_at) {
+        <span class="chip">Cancelada</span>
+      } @else {
+        <button class="btn-fantasma peligro" (click)="cancelar(f)">Cancelar función</button>
+      }
+      <button class="btn-fantasma peligro" (click)="eliminar(f)">Borrar</button>  
+    </div>
+  } @empty {
+    <p class="suave">Todavía no hay funciones programadas.</p>
+  }
+</section>

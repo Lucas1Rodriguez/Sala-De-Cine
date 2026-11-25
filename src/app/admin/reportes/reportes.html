@@ -1,0 +1,108 @@
+<h1>Reporte de facturación</h1>
+
+<div class="sel-generos">
+  @for (r of rangos; track r.id) {
+    <button type="button" class="chip" [class.activo]="rango() === r.id" (click)="elegir(r.id)">{{ r.label }}</button>
+  }
+</div>
+
+<div class="exportar">
+  <button type="button" class="btn-fantasma" [disabled]="exportando() || !totalOrdenes()" (click)="exportar('pdf')">
+    {{ exportando() ? 'Exportando...' : 'Exportar PDF' }}
+  </button>
+  <button type="button" class="btn-fantasma" [disabled]="exportando() || !totalOrdenes()" (click)="exportar('excel')">
+    Exportar Excel
+  </button>
+</div>
+
+@if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+
+<div class="resumen-cards">
+  <div class="panel dato">
+    <span class="suave">Facturado</span>
+    <strong>{{ plata(totalFacturado()) }}</strong>
+    <span class="suave">Valor de las ventas, con descuentos</span>
+  </div>
+  <div class="panel dato">
+    <span class="suave">Cobrado</span>
+    <strong>{{ plata(totalCobrado()) }}</strong>
+    <span class="suave">Pagado con tarjeta</span>
+  </div>
+  <div class="panel dato">
+    <span class="suave">Pagado con crédito</span>
+    <strong>{{ plata(totalCredito()) }}</strong>
+    <span class="suave">Saldo de cancelaciones</span>
+  </div>
+  <div class="panel dato">
+    <span class="suave">Canjes por puntos</span>
+    <strong>{{ totalCanjes() }}</strong>
+    <span class="suave">{{ totalPuntos() }} puntos usados</span>
+  </div>
+  <div class="panel dato">
+    <span class="suave">Entradas vendidas</span>
+    <strong>{{ totalEntradas() }}</strong>
+  </div>
+  <div class="panel dato">
+    <span class="suave">Compras</span>
+    <strong>{{ totalOrdenes() }}</strong>
+  </div>
+</div>
+
+<section class="panel">
+  <h2>Facturación por día</h2>
+  @if (cargando()) {
+    <p class="suave">Cargando...</p>
+  } @else if (!totalOrdenes()) {
+    <p class="suave">No hubo ventas en este período.</p>
+  } @else {
+    <div class="grafico" role="img" aria-label="Gráfico de barras de facturación por día">
+      @for (d of dias(); track d.fecha) {
+        <div class="barra-col" [title]="diaLargo(d.fecha) + ': ' + plata(d.total_facturado) + ' · ' + d.cant_entradas + ' entradas'">
+          <div class="barra" [style.height.%]="alto(d)"></div>
+          <span class="dia">{{ diaCorto(d.fecha) }}</span>
+        </div>
+      }
+    </div>
+  }
+</section>
+
+<div class="dos">
+  <section class="panel">
+    <h2>Películas más vistas</h2>
+    <h3 class="suave sub">Última semana</h3>
+    <app-barras [items]="semana()" />
+    <h3 class="suave sub">Este mes</h3>
+    <app-barras [items]="mes()" />
+  </section>
+
+  <section class="panel">
+    <h2>Candy más vendido</h2>
+    @if (productos()[0]; as top) {
+      <p>El que más se vende: <strong>{{ top.nombre }}</strong> ({{ top.valor }} unidades).</p>
+    }
+    <app-barras [items]="productos()" vacio="No hubo ventas de candy en este período" />
+  </section>
+</div>
+
+@if (totalOrdenes()) {
+  <section class="panel lista">
+    <h2>Detalle por día</h2>
+    <div class="fila-tabla cabecera">
+      <span>Día</span><span>Compras</span><span>Entradas</span><span>Facturado</span>
+    </div>
+    @for (d of conVentas(); track d.fecha) {
+      <div>
+        <div class="fila-tabla">
+          <span>{{ diaLargo(d.fecha) }}</span>
+          <span>{{ d.cant_ordenes }}</span>
+          <span>{{ d.cant_entradas }}</span>
+          <strong>{{ plata(d.total_facturado) }}</strong>
+        </div>
+        @if (nota(d); as n) { <p class="nota suave">{{ n }}</p> }
+      </div>
+    }
+    <div class="fila-tabla total-fila">
+      <span>Total</span><span>{{ totalOrdenes() }}</span><span>{{ totalEntradas() }}</span><strong>{{ plata(totalFacturado()) }}</strong>
+    </div>
+  </section>
+}

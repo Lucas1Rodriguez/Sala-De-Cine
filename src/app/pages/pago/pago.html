@@ -1,0 +1,153 @@
+<main class="contenedor">
+  @if (cargando()) {
+    <p class="suave">Cargando compra...</p>
+  } @else if (motivoError()) {
+    <p>{{ motivoError() }}</p>
+    <a routerLink="/" class="btn-fantasma">Volver a la cartelera</a>
+  } @else if (orden(); as o) {
+    <h1>Pagar</h1>
+
+    <div class="pago">
+      <section class="panel">
+        <h2>{{ o.funciones.peliculas.nombre }}</h2>
+        <p class="suave">
+          {{ fmt(o.funciones.inicio) }} · {{ o.funciones.salas.nombre }} · {{ o.funciones.formato }}
+          · {{ o.funciones.idioma === 'castellano' ? 'Castellano' : 'Subtitulada' }}
+        </p>
+
+        <ul class="lista-sel">
+          @for (e of entradas(); track $index) {
+            <li>
+              <span>
+                {{ e.butacas.fila }}{{ e.butacas.numero }}
+                @if (e.butacas.tipo === 'vip') { <span class="etiqueta vip">VIP</span> }
+                @if (e.butacas.tipo === 'accesible') { <span class="etiqueta accesible">Accesible</span> }
+              </span>
+              <span>{{ e.precio === 0 ? 'En combo' : plata(e.precio) }}</span>
+            </li>
+          }
+        </ul>
+
+        @if (items().length) {
+          <ul class="lista-sel">
+            @for (i of items(); track i.nombre) {
+              <li>
+                <span>
+                  {{ i.cantidad }} × {{ i.nombre }}
+                  @if (i.canjeadas) { <span class="etiqueta accesible">{{ i.canjeadas }} con puntos</span> }
+                </span>
+                <span>{{ i.importe === 0 ? 'Canje' : plata(i.importe) }}</span>
+              </li>
+            }
+          </ul>
+        }
+
+        @if (calculo(); as c) {
+          <div class="desglose">
+            <p><span>Subtotal</span><span>{{ plata(c.subtotal) }}</span></p>
+            @if (c.descuento > 0) {
+              <p class="desc">
+                <span>{{ etiquetaCupon(c) }} ({{ c.porcentaje }}%)</span>
+                <span>-{{ plata(c.descuento) }}</span>
+              </p>
+            }
+            @if (c.canjes > 0) {
+              <p class="desc"><span>Entrada canjeada con puntos</span><span>-{{ plata(c.canjes) }}</span></p>
+            }
+            @if (c.credito_aplicado > 0) {
+              <p class="desc"><span>Crédito de tu cuenta</span><span>-{{ plata(c.credito_aplicado) }}</span></p>
+            }
+            <p class="total">
+              <span>{{ c.credito_aplicado > 0 ? 'A pagar' : 'Total' }}</span>
+              <strong>{{ plata(c.a_pagar) }}</strong>
+            </p>
+          </div>
+        }
+
+        @if (auth.perfil(); as p) {
+          @if (p.credito > 0 || usarCredito()) {
+            <div class="canje">
+              <h3>Crédito de tu cuenta</h3>
+              <label class="check">
+                <input type="checkbox" [checked]="usarCredito()" (change)="alternarCredito($any($event.target).checked)" />
+                Usar mi crédito ({{ plata(p.credito) }} disponible)
+              </label>
+              <p class="suave">Si no alcanza para todo, el resto lo pagás con tarjeta.</p>
+            </div>
+          }
+
+          <div class="canje">
+            <h3>Canjear puntos</h3>
+            <p class="suave">Te quedan <strong>{{ disponibles() }}</strong> puntos para usar en esta compra.</p>
+
+            @for (c of canjes(); track c.id) {
+              <div class="fila-canje">
+                <span>{{ nombreRecompensa(c.recompensas) }} · {{ c.puntos_gastados }} pts</span>
+                <button type="button" class="btn-fantasma" (click)="quitar(c)">Quitar</button>
+              </div>
+            }
+
+            <div class="recompensas">
+              @for (r of recompensas(); track r.id) {
+                <button type="button" class="recompensa" [disabled]="disponibles() < r.puntos_costo" (click)="canjear(r)">
+                  <strong>{{ nombreRecompensa(r) }}</strong>
+                  <span>{{ r.puntos_costo }} pts</span>
+                </button>
+              } @empty {
+                <p class="suave">Todavía no hay recompensas disponibles.</p>
+              }
+            </div>
+          </div>
+          @if (errorCanje()) { <p class="error" role="alert">{{ errorCanje() }}</p> }
+        } @else {
+          <p class="aviso">Estás comprando como invitado: no se aplican cupones ni se suman puntos, y no vas a poder cancelar la compra.</p>
+        }
+
+        @if (o.funciones.peliculas.clasificacion_edad) {
+          <p class="aviso">
+            Película +{{ o.funciones.peliculas.clasificacion_edad }}: los menores deben asistir acompañados de un adulto.
+          </p>
+        }
+      </section>
+
+      <section class="panel">
+        @if (vencida()) {
+          <h2>La reserva venció</h2>
+          <p class="suave">Pasaron los 5 minutos y las butacas se liberaron.</p>
+          <a [routerLink]="['/funcion', o.funciones.id]" class="btn">Elegir butacas de nuevo</a>
+        } @else {
+          <p class="cuenta">Tiempo para pagar <strong>{{ cuenta() }}</strong></p>
+
+          @if (sinTarjeta()) {
+            <h2>Confirmar compra</h2>
+            <p class="suave">El total está cubierto con tu crédito: no hace falta cargar una tarjeta.</p>
+            @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+            <button type="button" class="btn confirmar" (click)="pagar()" [disabled]="pagando()">
+              {{ pagando() ? 'Procesando...' : 'Confirmar compra' }}
+            </button>
+          } @else {
+            <h2>Datos de la tarjeta</h2>
+            <p class="simulado">Pago simulado: no se cobra nada. Podés usar cualquier número de 16 dígitos.</p>
+
+            <form [formGroup]="form" (ngSubmit)="pagar()">
+              <label>Titular <input formControlName="titular" autocomplete="cc-name" /></label>
+              <label>Número de tarjeta
+                <input formControlName="tarjeta" inputmode="numeric" placeholder="1234 5678 9012 3456" autocomplete="cc-number" />
+              </label>
+              <div class="fila">
+                <label>Vencimiento <input formControlName="vencimiento" placeholder="MM/AA" autocomplete="cc-exp" /></label>
+                <label>CVV <input formControlName="cvv" inputmode="numeric" placeholder="123" autocomplete="cc-csc" /></label>
+              </div>
+
+              @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+
+              <button type="submit" class="btn" [disabled]="pagando()">
+                {{ pagando() ? 'Procesando pago...' : 'Pagar ' + (calculo() ? plata(calculo()!.a_pagar) : '') }}
+              </button>
+            </form>
+          }
+        }
+      </section>
+    </div>
+  }
+</main>

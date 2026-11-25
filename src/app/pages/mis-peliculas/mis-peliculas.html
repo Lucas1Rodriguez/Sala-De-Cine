@@ -1,0 +1,41 @@
+<main class="contenedor">
+  <h1>Mis películas</h1>
+  <p class="suave">Todo lo que viste en el cine, con tu calificación.</p>
+
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+
+  @if (cargando()) {
+    <p class="suave">Cargando...</p>
+  } @else if (!peliculas().length) {
+    <section class="panel">
+      <p>Todavía no viste ninguna película con nosotros.</p>
+      <p class="suave">Tus películas aparecen acá cuando tu entrada se valida en la puerta del cine.</p>
+      <a routerLink="/" class="btn">Ver la cartelera</a>
+    </section>
+  } @else {
+    <div class="vistas">
+      @for (p of peliculas(); track p.id) {
+        <article class="vista">
+          <a [routerLink]="['/pelicula', p.id]" class="poster">
+            @if (p.imagen_url) {
+              <img [src]="p.imagen_url" [alt]="'Póster de ' + p.nombre" loading="lazy" />
+            } @else {
+              <span class="sin-poster">{{ p.nombre }}</span>
+            }
+          </a>
+          <h3>{{ p.nombre }}</h3>
+          <p class="suave">
+            {{ fecha(p.ultima_vez) }}
+            @if (p.veces > 1) { · La viste {{ p.veces }} veces }
+          </p>
+          @if (p.estrellas !== null) {
+            <p class="estrellas" [attr.aria-label]="'Tu calificación: ' + p.estrellas + ' de 5'">{{ estrellas(p.estrellas) }}</p>
+            @if (p.comentario) { <p class="suave comentario">“{{ p.comentario }}”</p> }
+          } @else {
+            <a [routerLink]="['/pelicula', p.id]" class="btn-fantasma">Calificar</a>
+          }
+        </article>
+      }
+    </div>
+  }
+</main>

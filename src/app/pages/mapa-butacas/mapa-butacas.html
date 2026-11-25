@@ -1,0 +1,153 @@
+<main class="contenedor">
+  @if (cargando()) {
+    <p class="suave">Cargando sala...</p>
+  } @else if (funcion(); as f) {
+    <a [routerLink]="['/pelicula', f.pelicula_id]" class="suave">← Volver a la película</a>
+    <h1>{{ f.peliculas.nombre }}</h1>
+    <p class="suave">{{ fmt(f.inicio) }} · {{ f.salas.nombre }} · {{ f.formato }} · {{ f.idioma === 'castellano' ? 'Castellano' : 'Subtitulada' }}</p>
+    @if (enPreventa()) {
+      <p class="aviso">
+        Precio de preventa: {{ plata(precioBase()) }} por entrada
+        (después del estreno: {{ plata(f.precio_base) }}).
+      </p>
+    }
+
+    <div class="leyenda">
+      <span><i class="muestra"></i>Libre</span>
+      <span><i class="muestra sel"></i>Elegida</span>
+      <span><i class="muestra ocupada"></i>Ocupada</span>
+      <span><i class="muestra accesible"></i>Accesible</span>
+      <span><i class="muestra vip"></i>VIP (+{{ recargo() }}%)</span>
+    </div>
+
+    <div class="mapa-wrap">
+      <div class="pantalla">PANTALLA</div>
+      <div class="mapa">
+        @for (r of filas(); track r.fila) {
+          <div class="fila-mapa">
+            <span class="etq">{{ r.fila }}</span>
+            @for (sector of r.sectores; track $index) {
+              <div class="sector">
+                @for (b of sector; track b.id) {
+                  <button type="button" class="butaca"
+                          [class.vip]="b.tipo === 'vip'"
+                          [class.accesible]="b.tipo === 'accesible'"
+                          [class.ocupada]="esOcupada(b)"
+                          [class.sel]="esSeleccionada(b)"
+                          [disabled]="esOcupada(b)"
+                          [title]="nombre(b) + ' · ' + tipoTexto(b) + ' · ' + plata(precio(b))"
+                          [attr.aria-label]="'Butaca ' + nombre(b) + ', ' + tipoTexto(b) + (esOcupada(b) ? ', ocupada' : '')"
+                          [attr.aria-pressed]="esSeleccionada(b)"
+                          (click)="toggle(b)"></button>
+                }
+              </div>
+            }
+            <span class="etq">{{ r.fila }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <section class="panel">
+      <h2>Tu selección</h2>
+
+      @if (f.peliculas.clasificacion_edad) {
+        <p class="aviso">
+          Película +{{ f.peliculas.clasificacion_edad }}: se necesita cuenta registrada y la edad mínima.
+          Los menores deben asistir con un adulto.
+        </p>
+      }
+
+      @if (!seleccionadas().length) {
+        <p class="suave">Tocá las butacas que quieras en el mapa.</p>
+      } @else {
+        <ul class="lista-sel">
+          @for (b of seleccionadas(); track b.id) {
+            <li>
+              <span>
+                {{ nombre(b) }}
+                @if (b.tipo === 'vip') { <span class="etiqueta vip">VIP</span> }
+                @if (b.tipo === 'accesible') { <span class="etiqueta accesible">Accesible</span> }
+              </span>
+              <span>{{ plata(precio(b)) }}</span>
+            </li>
+          }
+        </ul>
+
+        @if (hayVip()) {
+          <p class="aviso aviso-vip">
+            Tu selección incluye butacas VIP, con un recargo del {{ recargo() }}% sobre el precio normal.
+          </p>
+        }
+      }
+
+      @if (combos().length) {
+        <h3 class="candy-titulo">Combos</h3>
+        <p class="suave">Los combos con entrada incluyen una butaca: elegí tus butacas y sumá un combo por cada una.</p>
+        <div class="combos">
+          @for (c of combos(); track c.id) {
+            <div class="combo" [class.elegido]="cantidadCombo(c) > 0">
+              <span class="sello">COMBO</span>
+              <strong>{{ c.nombre }}</strong>
+              @if (c.descripcion) { <span class="suave">{{ c.descripcion }}</span> }
+               <span class="suave">{{ detalleCombo(c) }}</span>
+              <span class="precio-combo">{{ plata(c.precio) }}</span>
+              <div class="stepper">
+                <button type="button" (click)="cambiarCombo(c, -1)" [disabled]="cantidadCombo(c) === 0" [attr.aria-label]="'Quitar ' + c.nombre">−</button>
+                <span>{{ cantidadCombo(c) }}</span>
+                <button type="button" (click)="cambiarCombo(c, 1)" [attr.aria-label]="'Agregar ' + c.nombre">+</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (productos().length) {
+        <h3 class="candy-titulo">Candy bar</h3>
+        <div class="sel-generos">
+          <button type="button" class="chip" [class.activo]="catSel() === null" (click)="catSel.set(null)">Todo</button>
+          @for (c of categorias(); track c.id) {
+            <button type="button" class="chip" [class.activo]="catSel() === c.id" (click)="catSel.set(c.id)">{{ c.nombre }}</button>
+          }
+        </div>
+        <div class="productos">
+          @for (p of productosVisibles(); track p.id) {
+            <div class="producto" [class.elegido]="cantidad(p) > 0">
+              <span class="nom">{{ p.nombre }}</span>
+              <span class="suave">{{ plata(p.precio) }}</span>
+              <div class="stepper">
+                <button type="button" (click)="cambiarCantidad(p, -1)" [disabled]="cantidad(p) === 0" [attr.aria-label]="'Quitar ' + p.nombre">−</button>
+                <span>{{ cantidad(p) }}</span>
+                <button type="button" (click)="cambiarCantidad(p, 1)" [attr.aria-label]="'Agregar ' + p.nombre">+</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (seleccionadas().length) {
+        @if (totalCandy() > 0) {
+          <p class="suave">Candy: {{ plata(totalCandy()) }} · se retira con el mismo QR de tu entrada.</p>
+        }
+        <p class="total">Total <strong>{{ plata(total()) }}</strong></p>
+
+        @if (!auth.perfil()) {
+          <label>Tu email (te enviamos la entrada)
+            <input type="email" autocomplete="email" [value]="email()"
+                   (input)="email.set($any($event.target).value)" />
+          </label>
+        }
+      }
+
+      @if (aviso()) { <p class="aviso" role="status">{{ aviso() }}</p> }
+      @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+
+      <button class="btn" (click)="reservar()" [disabled]="reservando() || !seleccionadas().length">
+        {{ reservando() ? 'Reservando...' : 'Reservar y pagar' }}
+      </button>
+    </section>
+  } @else {
+    <p>No encontramos esa función.</p>
+    <a routerLink="/" class="btn-fantasma">Volver a la cartelera</a>
+  }
+</main>

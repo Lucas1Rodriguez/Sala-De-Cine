@@ -1,0 +1,74 @@
+<h1>Combos</h1>
+
+<section class="panel">
+  <h2>Nuevo combo</h2>
+
+  <div class="fila">
+    <label>Nombre
+      <input [value]="nombre()" (input)="nombre.set($any($event.target).value)" placeholder="Combo Clásico" />
+    </label>
+    <label>Precio fijo ($)
+      <input type="number" min="0" [value]="precio() ?? ''" (input)="precio.set($any($event.target).valueAsNumber)" />
+    </label>
+  </div>
+  <label>Descripción (opcional)
+    <input [value]="descripcion()" (input)="descripcion.set($any($event.target).value)" />
+  </label>
+
+  <fieldset>
+    <legend>Tipo de combo</legend>
+    <div class="sel-generos">
+      <button type="button" class="chip" [class.activo]="incluyeEntrada()" (click)="incluyeEntrada.set(true)">Con entrada</button>
+      <button type="button" class="chip" [class.activo]="!incluyeEntrada()" (click)="incluyeEntrada.set(false)">Solo candy</button>
+    </div>
+    <p class="suave">
+      {{ incluyeEntrada()
+        ? 'El precio fijo cubre la entrada y los productos elegidos.'
+        : 'El precio fijo cubre solo los productos. Se compra junto con una entrada.' }}
+    </p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Productos incluidos</legend>
+    @if (!productos().length) {
+      <p class="suave">Primero creá productos en Candy bar.</p>
+    }
+    <div class="productos">
+      @for (p of productos(); track p.id) {
+        <div class="producto" [class.elegido]="cantidad(p) > 0">
+          <span class="nom">{{ p.nombre }}</span>
+          <span class="suave">{{ plata(p.precio) }}</span>
+          <div class="stepper">
+            <button type="button" (click)="cambiar(p, -1)" [disabled]="cantidad(p) === 0" [attr.aria-label]="'Quitar ' + p.nombre">−</button>
+            <span>{{ cantidad(p) }}</span>
+            <button type="button" (click)="cambiar(p, 1)" [attr.aria-label]="'Agregar ' + p.nombre">+</button>
+          </div>
+        </div>
+      }
+    </div>
+  </fieldset>
+
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (ok()) { <p class="ok" role="status">{{ ok() }}</p> }
+  <button class="btn" (click)="crear()">Crear combo</button>
+</section>
+
+<section class="panel lista">
+  <h2>Combos existentes</h2>
+  @for (c of combos(); track c.id) {
+    <div class="fila-peli">
+      <div class="info">
+        <strong>{{ c.nombre }}</strong>
+        <span class="suave">{{ detalle(c) }}</span>
+      </div>
+      <label class="pct">
+        <span>$</span>
+        <input type="number" min="0" [value]="c.precio" (change)="cambiarPrecio(c, $any($event.target).valueAsNumber)" />
+      </label>
+      <button class="chip estado" [class.on]="c.activo" (click)="alternar(c)">{{ c.activo ? 'Activo' : 'Inactivo' }}</button>
+      <button class="btn-fantasma peligro" (click)="borrar(c)">Borrar</button>
+    </div>
+  } @empty {
+    <p class="suave">Todavía no hay combos.</p>
+  }
+</section>

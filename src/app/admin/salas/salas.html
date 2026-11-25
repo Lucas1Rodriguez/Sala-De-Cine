@@ -1,0 +1,85 @@
+<h1>Salas</h1>
+
+<section class="panel">
+  <h2>Nueva sala</h2>
+  <p class="suave">Todas las salas comparten la misma distribución. Después podés ajustar las butacas una por una.</p>
+  <div class="buscar">
+    <input placeholder="Nombre (ej: Sala 4)" [value]="nuevoNombre()"
+           (input)="nuevoNombre.set($any($event.target).value)" (keydown.enter)="crear()" />
+    <button class="btn" (click)="crear()">Crear sala</button>
+  </div>
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (ok()) { <p class="ok" role="status">{{ ok() }}</p> }
+</section>
+
+<section class="panel lista">
+  <h2>Salas existentes</h2>
+  @for (s of salas(); track s.id) {
+    <div class="fila-peli">
+      <div class="info">
+        <input class="nombre-sala" [value]="s.nombre" (change)="renombrar(s, $any($event.target).value)"
+               [attr.aria-label]="'Nombre de ' + s.nombre" />
+        <span class="suave">{{ total(s) }} butacas</span>
+      </div>
+      <button class="chip estado" [class.on]="s.activa" (click)="alternarActiva(s)">{{ s.activa ? 'Activa' : 'Inactiva' }}</button>
+      <button class="btn-fantasma" (click)="abrir(s)">Editar butacas</button>
+    </div>
+  }
+  <p class="suave">Una sala inactiva no recibe funciones nuevas. Las funciones que ya tiene se mantienen.</p>
+</section>
+
+@if (salaSel(); as s) {
+  <section class="panel editor lista">
+    <div class="encabezado">
+      <h2>Butacas de {{ s.nombre }}</h2>
+      <button class="btn-fantasma" (click)="cerrar()">Cerrar</button>
+    </div>
+    <p class="suave">
+      Elegí una herramienta y tocá una butaca, o la letra de una fila para aplicarla a toda la fila.
+      Hay {{ bloqueadas() }} butacas bloqueadas.
+    </p>
+
+    <div class="sel-generos">
+      @for (h of herramientas; track h.id) {
+        <button type="button" class="chip" [class.activo]="herramienta() === h.id" (click)="herramienta.set(h.id)">{{ h.label }}</button>
+      }
+    </div>
+
+    <div class="leyenda">
+      <span><i class="muestra"></i>Común</span>
+      <span><i class="muestra vip"></i>VIP</span>
+      <span><i class="muestra accesible"></i>Accesible</span>
+      <span><i class="muestra ocupada"></i>Bloqueada</span>
+    </div>
+
+    <div class="mapa-wrap">
+      <div class="pantalla">PANTALLA</div>
+      <div class="mapa">
+        @for (r of filas(); track r.fila) {
+          <div class="fila-mapa">
+            <button type="button" class="etq" (click)="aplicar(deLaFila(r))" [attr.aria-label]="'Aplicar a toda la fila ' + r.fila">{{ r.fila }}</button>
+            @for (sector of r.sectores; track $index) {
+              <div class="sector">
+                @for (b of sector; track b.id) {
+                  <button type="button" class="butaca"
+                          [class.vip]="b.tipo === 'vip'"
+                          [class.accesible]="b.tipo === 'accesible'"
+                          [class.ocupada]="!b.habilitada"
+                          [title]="nombreButaca(b) + ' · ' + tipoTexto(b) + (b.habilitada ? '' : ' · bloqueada')"
+                          [attr.aria-label]="'Butaca ' + nombreButaca(b) + ', ' + tipoTexto(b) + (b.habilitada ? '' : ', bloqueada')"
+                          (click)="aplicar([b])"></button>
+                }
+              </div>
+            }
+            <span class="etq">{{ r.fila }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <p class="suave">
+      Bloquear o cambiar una butaca no modifica las entradas ya vendidas: solo afecta a las compras nuevas.
+      El recargo VIP se calcula según el tipo de butaca.
+    </p>
+  </section>
+}

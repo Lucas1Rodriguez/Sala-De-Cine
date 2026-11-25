@@ -1,0 +1,127 @@
+<main class="contenedor">
+  @if (cargando()) {
+    <p class="suave">Cargando...</p>
+  } @else if (noExiste()) {
+    <p>No encontramos esa película.</p>
+    <a routerLink="/" class="btn-fantasma">Volver a la cartelera</a>
+  } @else if (pelicula(); as p) {
+    <div class="detalle" [attr.data-genero]="acento()">
+      <div class="poster-grande">
+        @if (p.imagen_url) { <img [src]="p.imagen_url" [alt]="'Póster de ' + p.nombre" /> }
+      </div>
+
+      <div class="datos">
+        <a routerLink="/" class="suave">← Cartelera</a>
+        <h1>{{ p.nombre }}</h1>
+
+        @if (stats().cant) {
+          <p class="promedio"><span class="estrellas">★</span> <strong>{{ stats().promedio }}</strong>
+            <span class="suave">({{ stats().cant }} {{ stats().cant === 1 ? 'reseña' : 'reseñas' }})</span></p>
+        }
+
+        <div class="generos">
+          @for (g of p.pelicula_generos; track g.genero_id) {
+            <span class="chip" [attr.data-genero]="slug(g.generos.nombre)">{{ g.generos.nombre }}</span>
+          }
+          <span class="suave">{{ p.duracion_min }} min</span>
+          <span class="suave">{{ p.clasificacion_edad ? '+' + p.clasificacion_edad : 'Apta para todo público' }}</span>
+        </div>
+
+        <p class="sinopsis">{{ p.sinopsis }}</p>
+
+        @if (p.clasificacion_edad) {
+          <p class="aviso">
+            Película +{{ p.clasificacion_edad }}: se necesita una cuenta registrada y cumplir la edad mínima.
+            Los menores deben asistir con un adulto.
+          </p>
+        }
+
+        @if (!abierta()) {
+          <section class="panel">
+            <h2>Próximamente</h2>
+            <p>Estreno {{ fmtCorta(p.fecha_estreno!) }}. La venta de entradas abre el {{ fmtCorta(aperturaVenta(p)!) }}.</p>
+            @if (auth.perfil()) {
+              <button type="button" class="btn" (click)="alternarAlerta(p.id)">
+                {{ alertas.activas().has(p.id) ? '🔔 Alerta activada (tocá para quitarla)' : 'Avisarme cuando abra la venta' }}
+              </button>
+            } @else {
+              <a routerLink="/login" class="btn-fantasma">Ingresá para activar la alerta</a>
+            }
+            @if (errorAlerta()) { <p class="error" role="alert">{{ errorAlerta() }}</p> }
+          </section>
+        } @else {
+          <section class="panel">
+            <h2>Funciones</h2>
+            @if (!funciones().length) {
+              <p class="suave">Por ahora no hay funciones programadas.</p>
+            } @else {
+              <div class="sel-generos dias">
+                @for (d of dias(); track d.clave) {
+                  <button type="button" class="chip" [class.activo]="diaSel() === d.clave"
+                          (click)="diaSel.set(d.clave)">{{ d.etiqueta }}</button>
+                }
+              </div>
+              <div class="horarios">
+                @for (f of funcionesDia(); track f.id) {
+                  <a class="horario" [routerLink]="['/funcion', f.id]">
+                    <strong>{{ hora(f.inicio) }}</strong>
+                    <span>{{ f.formato }} · {{ f.idioma === 'castellano' ? 'Castellano' : 'Subtitulada' }}</span>
+                    <small>{{ f.salas.nombre }}</small>
+                  </a>
+                }
+              </div>
+            }
+          </section>
+        }
+
+        <section class="panel">
+          <h2>Reseñas</h2>
+
+          @if (puedeResenar()) {
+            @if (miResena() && !editandoResena()) {
+              <div class="mi-resena">
+                <p class="suave">Tu reseña</p>
+                <span class="estrellas">{{ estrellasTexto(miResena()!.estrellas) }}</span>
+                @if (miResena()!.comentario) { <p>{{ miResena()!.comentario }}</p> }
+                <button class="btn-fantasma" (click)="editandoResena.set(true)">Editar</button>
+              </div>
+            } @else {
+              <div class="selector-estrellas" role="radiogroup" aria-label="Tu calificación">
+                @for (n of [1, 2, 3, 4, 5]; track n) {
+                  <button type="button" [class.activo]="estrellas() >= n" (click)="estrellas.set(n)"
+                          [attr.aria-label]="n + ' estrellas'">★</button>
+                }
+              </div>
+              <label>Tu comentario (opcional)
+                <textarea rows="2" maxlength="280" [value]="comentario()"
+                          (input)="comentario.set($any($event.target).value)"></textarea>
+              </label>
+              @if (errorResena()) { <p class="error" role="alert">{{ errorResena() }}</p> }
+              <div class="acciones">
+                <button class="btn" (click)="guardarResena()" [disabled]="guardandoResena()">Guardar reseña</button>
+                @if (editandoResena()) { <button class="btn-fantasma" (click)="cancelarEdicion()">Cancelar</button> }
+              </div>
+            }
+          } @else if (auth.perfil()) {
+            <p class="suave">Vas a poder reseñarla después de verla, cuando validemos tu entrada.</p>
+          } @else {
+            <p class="suave"><a routerLink="/login">Ingresá</a> para reseñar las películas que veas.</p>
+          }
+
+          @for (r of otras(); track r.id) {
+            <div class="resena">
+              <div class="resena-cab">
+                <strong>{{ r.autor }}</strong>
+                <span class="estrellas">{{ estrellasTexto(r.estrellas) }}</span>
+              </div>
+              @if (r.comentario) { <p>{{ r.comentario }}</p> }
+            </div>
+          } @empty {
+            @if (!miResena()) { <p class="suave">Todavía no hay reseñas.</p> }
+          }
+        </section>
+        
+      </div>
+    </div>
+  }
+</main>

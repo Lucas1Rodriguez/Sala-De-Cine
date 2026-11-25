@@ -1,0 +1,88 @@
+<ng-template #card let-p>
+  <a class="tarjeta" [attr.data-genero]="acento(p)" [routerLink]="['/pelicula', p.id]">
+    <div class="poster">
+      @if (p.imagen_url) { <img [src]="p.imagen_url" [alt]="'Póster de ' + p.nombre" loading="lazy" /> }
+      @if (p.clasificacion_edad) { <span class="edad">+{{ p.clasificacion_edad }}</span> }
+    </div>
+    <h3>{{ p.nombre }}</h3>
+    @if (esPreventa(p)) { <span class="etiqueta">Preventa</span> }
+    @if (stats()[p.id]?.cant) { <span class="nota">★ {{ stats()[p.id].promedio }} <small>({{ stats()[p.id].cant }})</small></span> }
+    <div class="generos">
+      @for (g of p.pelicula_generos; track g.genero_id) {
+        <span class="chip" [attr.data-genero]="slug(g.generos.nombre)">{{ g.generos.nombre }}</span>
+      }
+    </div>
+  </a>
+</ng-template>
+
+<main class="contenedor">
+  @if (masVendidas().length && !hayFiltros()) {
+    <h2>Más vendidas</h2>
+    <div class="grilla top">
+      @for (p of masVendidas(); track p.id) {
+        <ng-container [ngTemplateOutlet]="card" [ngTemplateOutletContext]="{ $implicit: p }" />
+      }
+    </div>
+  }
+
+  <div class="encabezado">
+    <h1>Cartelera</h1>
+  </div>
+
+  <input class="buscador" type="search" placeholder="Buscar película..."
+         aria-label="Buscar película"
+         [value]="busqueda()" (input)="busqueda.set($any($event.target).value)" />
+
+  <div class="sel-generos filtros">
+    @for (g of generos(); track g.id) {
+      <button type="button" class="chip" [attr.data-genero]="slug(g.nombre)"
+              [class.activo]="generosSel().includes(g.id)" (click)="toggleGenero(g.id)">
+        {{ g.nombre }}
+      </button>
+    }
+    @if (hayFiltros()) {
+      <button type="button" class="btn-fantasma limpiar" (click)="limpiar()">Limpiar</button>
+    }
+  </div>
+
+  @if (cargando()) {
+    <p class="suave">Cargando cartelera...</p>
+  } @else if (!filtradas().length) {
+    <p class="suave">
+      {{ hayFiltros() ? 'No hay películas que coincidan con tu búsqueda.' : 'Todavía no hay películas en cartelera.' }}
+    </p>
+  } @else {
+    <div class="grilla">
+      @for (p of filtradas(); track p.id) {
+        <ng-container [ngTemplateOutlet]="card" [ngTemplateOutletContext]="{ $implicit: p }" />
+      }
+    </div>
+  }
+
+  @if (proximamente().length && !hayFiltros()) {
+    <h2 class="prox-titulo">Próximamente</h2>
+    @if (errorAlerta()) { <p class="error" role="alert">{{ errorAlerta() }}</p> }
+    <div class="grilla">
+      @for (p of proximamente(); track p.id) {
+        <article class="tarjeta" [attr.data-genero]="acento(p)">
+          <a [routerLink]="['/pelicula', p.id]">
+            <div class="poster">
+              @if (p.imagen_url) { <img [src]="p.imagen_url" [alt]="'Póster de ' + p.nombre" loading="lazy" /> }
+              @if (p.clasificacion_edad) { <span class="edad">+{{ p.clasificacion_edad }}</span> }
+            </div>
+            <h3>{{ p.nombre }}</h3>
+          </a>
+          <p class="suave">Estreno {{ fmtCorta(p.fecha_estreno!) }} · Venta desde {{ fmtCorta(aperturaVenta(p)!) }}</p>
+          @if (auth.perfil()) {
+            <button type="button" class="btn-fantasma" [attr.aria-pressed]="alertas.activas().has(p.id)"
+                    (click)="alternarAlerta(p)">
+              {{ alertas.activas().has(p.id) ? '🔔 Alerta activada' : 'Avisarme cuando abra la venta' }}
+            </button>
+          } @else {
+            <a routerLink="/login" class="suave">Ingresá para activar la alerta</a>
+          }
+        </article>
+      }
+    </div>
+  }
+</main>

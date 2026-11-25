@@ -1,0 +1,63 @@
+<header class="nav">
+  <a routerLink="/" class="marca">◉ ÓRBITA</a>
+
+  <nav class="links">
+    <a routerLink="/" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }">Cartelera</a>
+    @if (auth.esAdmin()) {
+      <a routerLink="/admin" routerLinkActive="activo">Admin</a>
+    }
+    @if (auth.esStaff()) {
+      <a routerLink="/validar" routerLinkActive="activo">Validar</a>
+    }
+    @if (auth.esRegistrado()) {
+      <a routerLink="/mis-peliculas" routerLinkActive="activo">Mis películas</a>
+      <a routerLink="/proponer" routerLinkActive="activo">Proponer película</a>
+    }
+  </nav>
+
+  <div class="cuenta">
+    @if (auth.perfil(); as p) {
+
+      <div class="campana">
+        <button class="btn-fantasma" (click)="alternar()" aria-label="Avisos" [attr.aria-expanded]="abierta()">
+          🔔 @if (notif.noLeidas() > 0) { <span class="punto">{{ notif.noLeidas() }}</span> }
+        </button>
+
+        @if (abierta()) {
+          <div class="panel avisos" role="dialog" aria-label="Avisos">
+            <div class="avisos-cab">
+              <strong>Avisos</strong>
+              @if (notif.noLeidas() > 0) {
+                <button class="btn-fantasma" (click)="notif.marcarTodas()">Marcar todo como leído</button>
+              }
+            </div>
+
+            @for (n of notif.lista(); track n.id) {
+              <article class="aviso" [class.nueva]="!n.leida">
+                <strong>{{ n.titulo }}</strong>
+                <p>{{ n.mensaje }}</p>
+                <small class="suave">{{ fmt(n.created_at) }}</small>
+                @if ((n.tipo === 'funcion_cancelada' || n.tipo === 'venta_abierta') && n.pelicula_id) {
+                  <button class="btn" (click)="elegirOtra(n)">
+                    {{ n.tipo === 'venta_abierta' ? 'Comprar entradas' : 'Elegir otra función' }}
+                  </button>
+                } @else if (!n.leida) {
+                  <button class="btn-fantasma" (click)="notif.marcarLeida(n)">Marcar como leído</button>
+                }
+              </article>
+            } @empty {
+              <p class="suave">No tenés avisos.</p>
+            }
+          </div>
+        }
+      </div>
+
+      <span class="chip">{{ p.puntos }} pts</span>
+      <a routerLink="/perfil" class="nombre">{{ p.nombre }}</a>
+      <button class="btn-fantasma" (click)="auth.logout()">Salir</button>
+    } @else {
+      <a routerLink="/login" class="btn-fantasma">Ingresar</a>
+      <a routerLink="/registro" class="btn">Registrarme</a>
+    }
+  </div>
+</header>

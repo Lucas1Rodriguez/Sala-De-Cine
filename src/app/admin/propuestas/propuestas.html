@@ -1,0 +1,45 @@
+<h1>Propuestas de películas</h1>
+<p class="suave">Sugerencias de los clientes. Al aceptar una, se abre la creación de la película con sus datos.</p>
+
+@if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+
+<section class="panel">
+  <h2>Pendientes ({{ pendientes().length }})</h2>
+  @if (cargando()) {
+    <p class="suave">Cargando...</p>
+  } @else if (!pendientes().length) {
+    <p class="suave">No hay propuestas pendientes.</p>
+  } @else {
+    @for (p of pendientes(); track p.id) {
+      <article class="propuesta">
+        <div class="cab">
+          <strong>{{ p.titulo }}</strong>
+          <span class="suave">{{ p.autor }} · {{ fecha(p.created_at) }}</span>
+        </div>
+        <p>{{ p.descripcion }}</p>
+        <p class="suave"><strong>Por qué la quiere:</strong> {{ p.motivo }}</p>
+        <div class="acciones">
+          <button type="button" class="btn" (click)="aceptar(p)">Aceptar y crear película</button>
+          <button type="button" class="btn-fantasma peligro" (click)="rechazar(p)">Rechazar</button>
+        </div>
+      </article>
+    }
+  }
+</section>
+
+@if (resueltas().length) {
+  <section class="panel">
+    <h2>Historial</h2>
+    @for (p of resueltas(); track p.id) {
+      <article class="propuesta">
+        <div class="cab">
+          <strong>{{ p.titulo }}</strong>
+          <span class="etiqueta">{{ estados[p.estado] }}</span>
+        </div>
+        <p class="suave">{{ p.autor }} · {{ fecha(p.created_at) }}
+          @if (p.motivo_rechazo) { · Motivo: {{ p.motivo_rechazo }} }
+        </p>
+      </article>
+    }
+  </section>
+}

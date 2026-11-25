@@ -1,0 +1,8 @@
+<app-navbar />
+@if (auth.avisoPermisos()) {
+  <div class="aviso-global" role="status">
+    {{ auth.avisoPermisos() }}
+    <button type="button" (click)="auth.avisoPermisos.set('')" aria-label="Cerrar aviso">✕</button>
+  </div>
+}
+<router-outlet />

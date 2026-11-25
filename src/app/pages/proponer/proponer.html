@@ -1,0 +1,47 @@
+<main class="contenedor">
+  <h1>Proponé una película</h1>
+  <p class="suave">¿Hay una película que te gustaría ver en nuestro cine? Contanos cuál y por qué. Podés tener una propuesta en revisión a la vez.</p>
+
+  <section class="panel">
+    @if (tienePendiente()) {
+      <p class="aviso">Ya tenés una propuesta en revisión. Cuando la resolvamos vas a poder enviar otra.</p>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+        <label>Título de la película
+          <input formControlName="titulo" maxlength="120" />
+        </label>
+        <label>Descripción
+          <textarea rows="4" formControlName="descripcion" maxlength="1000"></textarea>
+        </label>
+        <label>¿Por qué querés verla en el cine?
+          <textarea rows="4" formControlName="motivo" maxlength="1000"></textarea>
+        </label>
+
+        @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+        @if (ok()) { <p class="aviso" role="status">{{ ok() }}</p> }
+
+        <button class="btn" type="submit" [disabled]="enviando()">
+          {{ enviando() ? 'Enviando...' : 'Enviar propuesta' }}
+        </button>
+      </form>
+    }
+  </section>
+
+  @if (propuestas().length) {
+    <section class="panel">
+      <h2>Mis propuestas</h2>
+      @for (p of propuestas(); track p.id) {
+        <article class="propuesta">
+          <div class="cab">
+            <strong>{{ p.titulo }}</strong>
+            <span class="etiqueta" [class.ok]="p.estado === 'aceptada'">{{ estados[p.estado] }}</span>
+          </div>
+          <p class="suave">Enviada el {{ fecha(p.created_at) }}</p>
+          @if (p.estado === 'rechazada' && p.motivo_rechazo) {
+            <p class="suave">Motivo: {{ p.motivo_rechazo }}</p>
+          }
+        </article>
+      }
+    </section>
+  }
+</main>

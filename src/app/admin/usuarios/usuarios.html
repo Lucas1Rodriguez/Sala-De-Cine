@@ -1,0 +1,29 @@
+<h1>Usuarios</h1>
+<p class="suave">
+  Para dar de alta a un empleado, pedile que se registre en la web y después asignale el rol acá.
+</p>
+
+<section class="panel lista">
+  <input type="search" placeholder="Buscar por nombre o email..." aria-label="Buscar usuario"
+         [value]="busqueda()" (input)="busqueda.set($any($event.target).value)" />
+
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (ok()) { <p class="ok" role="status">{{ ok() }}</p> }
+
+  @for (u of visibles(); track u.id) {
+    <div class="fila-peli">
+      <div class="info">
+        <strong>{{ u.nombre }} {{ u.apellido }} @if (u.id === auth.perfil()?.id) { <span class="chip">Vos</span> }</strong>
+        <span class="suave">{{ u.email }}</span>
+      </div>
+      <select class="selector-rol" [disabled]="u.id === auth.perfil()?.id"
+              [attr.aria-label]="'Rol de ' + u.nombre" (change)="cambiar(u, $any($event.target).value)">
+        @for (r of roles; track r) {
+          <option [value]="r" [selected]="u.rol === r">{{ etiqueta[r] }}</option>
+        }
+      </select>
+    </div>
+  } @empty {
+    <p class="suave">No hay usuarios que coincidan.</p>
+  }
+</section>

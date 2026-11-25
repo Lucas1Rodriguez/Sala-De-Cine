@@ -1,0 +1,52 @@
+<h1>Cupones</h1>
+
+<section class="panel">
+  <h2>Nuevo cupón</h2>
+
+  <fieldset>
+    <legend>Para quién es</legend>
+    <div class="sel-generos">
+      <button type="button" class="chip" [class.activo]="tipo() === 'mayores_50'" (click)="tipo.set('mayores_50')">Mayores de 50</button>
+      <button type="button" class="chip" [class.activo]="tipo() === 'bienvenida'" (click)="tipo.set('bienvenida')">Primera compra</button>
+    </div>
+  </fieldset>
+
+  <div class="fila">
+    <label>Código
+      <input [value]="codigo()" (input)="codigo.set($any($event.target).value)" placeholder="MAYORES50" />
+    </label>
+    <label>Descuento (%)
+      <input type="number" min="1" max="100" [value]="porcentaje() ?? ''"
+             (input)="porcentaje.set($any($event.target).valueAsNumber)" />
+    </label>
+  </div>
+
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (ok()) { <p class="ok" role="status">{{ ok() }}</p> }
+
+  <button class="btn" (click)="crear()">Crear cupón</button>
+</section>
+
+<section class="panel lista">
+  <h2>Cupones existentes</h2>
+  <p class="suave">Si un usuario puede usar más de un cupón en una compra, se aplica solo el de mayor descuento.</p>
+  @for (c of cupones(); track c.id) {
+    <div class="fila-peli">
+      <div class="info">
+        <strong>{{ c.codigo }}</strong>
+        <span class="suave">{{ etiqueta(c.tipo) }}</span>
+      </div>
+      <label class="pct">
+        <input type="number" min="1" max="100" [value]="c.porcentaje"
+               (change)="cambiarPorcentaje(c, $any($event.target).valueAsNumber)" />
+        <span>%</span>
+      </label>
+      <button class="chip estado" [class.on]="c.activo" (click)="alternar(c)">
+        {{ c.activo ? 'Activo' : 'Inactivo' }}
+      </button>
+      <button class="btn-fantasma peligro" (click)="eliminar(c)">Borrar</button>
+    </div>
+  } @empty {
+    <p class="suave">Todavía no hay cupones.</p>
+  }
+</section>

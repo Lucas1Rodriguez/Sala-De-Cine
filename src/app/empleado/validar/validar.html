@@ -1,0 +1,71 @@
+<main class="contenedor">
+  <h1>Validar entradas</h1>
+  <p class="suave">Escaneá el QR de la entrada o escribí el código de 8 caracteres.</p>
+
+  <section class="panel">
+    <div class="buscar">
+      <input class="codigo-input" placeholder="CÓDIGO" maxlength="8" autocomplete="off"
+             aria-label="Código de la entrada"
+             [value]="codigo()" (input)="codigo.set($any($event.target).value.toUpperCase())"
+             (keydown.enter)="buscar()" />
+      <button class="btn" (click)="buscar()" [disabled]="buscando()">Buscar</button>
+      @if (camaraActiva()) {
+        <button class="btn-fantasma" (click)="detenerCamara()">Cerrar cámara</button>
+      } @else {
+        <button class="btn-fantasma" (click)="iniciarCamara()">Escanear con cámara</button>
+      }
+    </div>
+
+    @if (camaraError()) { <p class="error" role="alert">{{ camaraError() }}</p> }
+    <video #video class="video" [class.oculto]="!camaraActiva()" playsinline muted></video>
+  </section>
+
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (ok()) { <p class="ok grande" role="status">{{ ok() }}</p> }
+
+  @if (info(); as i) {
+    <section class="panel resultado">
+      <h2>{{ i.pelicula }}</h2>
+      <p class="suave">{{ fmt(i.inicio) }} · {{ i.sala }} · {{ i.formato }} · {{ i.idioma === 'castellano' ? 'Castellano' : 'Subtitulada' }}</p>
+      <p>Butacas: <strong>{{ i.butacas }}</strong></p>
+
+      @if (i.clasificacion_edad) {
+        <p class="aviso">Película +{{ i.clasificacion_edad }}: los menores deben ir con un adulto.</p>
+      }
+
+      @if (i.estado !== 'pagada') {
+        <p class="error">Esta compra figura como "{{ i.estado }}": no es válida.</p>
+      } @else {
+        @if (!esHoy(i)) {
+          <p class="aviso">Atención: esta función no es de hoy.</p>
+        }
+
+        <div class="estados">
+          <div class="estado-box" [class.hecho]="i.entrada_validada_at">
+            <h3>Entrada</h3>
+            @if (i.entrada_validada_at) {
+              <p>Ya validada a las {{ hora(i.entrada_validada_at) }}</p>
+            } @else {
+              <p class="suave">Sin usar</p>
+              <button class="btn" (click)="validar('entrada')" [disabled]="procesando()">Validar entrada</button>
+            }
+          </div>
+
+          <div class="estado-box" [class.hecho]="i.candy_retirado_at">
+            <h3>Candy bar</h3>
+            @if (!i.tiene_candy) {
+              <p class="suave">Esta compra no incluye candy</p>
+            } @else if (i.candy_retirado_at) {
+              <p>Ya retirado a las {{ hora(i.candy_retirado_at) }}</p>
+            } @else {
+              <p class="suave">Pendiente de entrega</p>
+              <button class="btn" (click)="validar('candy')" [disabled]="procesando()">Entregar candy</button>
+            }
+          </div>
+        </div>
+      }
+
+      <button class="btn-fantasma" (click)="nuevo()">Validar otro código</button>
+    </section>
+  }
+</main>

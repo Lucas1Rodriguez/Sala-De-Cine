@@ -1,0 +1,82 @@
+<div class="encabezado">
+  <h1>Películas</h1>
+  <button class="btn" (click)="nueva()">+ Nueva película</button>
+</div>
+
+@if (mostrandoForm()) {
+  <form class="panel" [formGroup]="form" (ngSubmit)="guardar()">
+    <h2>{{ editando() ? 'Editar película' : 'Nueva película' }}</h2>
+    @if (propuestaOrigen(); as o) {
+      <p class="aviso">
+        Creando a partir de la propuesta «{{ o.titulo }}». Al guardar, queda marcada como aceptada y se le avisa al cliente.
+      </p>
+    }
+
+    <label>Nombre <input formControlName="nombre" /></label>
+    <label>Sinopsis <textarea rows="4" formControlName="sinopsis"></textarea></label>
+
+    <div class="fila">
+      <label>Duración (minutos) <input type="number" formControlName="duracion_min" min="1" /></label>
+      <label>Clasificación
+        <select formControlName="clasificacion_edad">
+          <option [ngValue]="0">Apta para todo público</option>
+          <option [ngValue]="13">+13</option>
+          <option [ngValue]="18">+18</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="fila">
+      <label>Fecha de estreno <input type="date" formControlName="fecha_estreno" /></label>
+      <label>Precio de preventa (opcional) <input type="number" formControlName="precio_preventa" min="0" /></label>
+    </div>
+
+    <fieldset>
+      <legend>Géneros</legend>
+      <div class="sel-generos">
+        @for (g of generos(); track g.id) {
+          <button type="button" class="chip" [attr.data-genero]="slug(g.nombre)"
+                  [class.activo]="generosSel().includes(g.id)" (click)="toggleGenero(g.id)">
+            {{ g.nombre }}
+          </button>
+        }
+      </div>
+    </fieldset>
+
+    <label>Póster <input type="file" accept="image/*" (change)="onArchivo($event)" /></label>
+    @if (previa()) { <img class="previa" [src]="previa()" alt="Vista previa del póster" /> }
+
+    <label class="check">
+      <input type="checkbox" formControlName="publicada" /> Mostrar en la página principal
+    </label>
+
+    @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+
+    <div class="acciones">
+      <button type="submit" class="btn" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando...' : 'Guardar' }}
+      </button>
+      <button type="button" class="btn-fantasma" (click)="cerrar()">Cancelar</button>
+    </div>
+  </form>
+}
+
+<div class="panel lista">
+  @for (p of peliculas(); track p.id) {
+    <div class="fila-peli">
+      @if (p.imagen_url) { <img [src]="p.imagen_url" [alt]="p.nombre" /> }
+      @else { <div class="sin-poster"></div> }
+      <div class="info">
+        <strong>{{ p.nombre }}</strong>
+        <span class="suave">{{ p.duracion_min }} min · {{ p.clasificacion_edad ? '+' + p.clasificacion_edad : 'ATP' }}</span>
+      </div>
+      <button class="chip estado" [class.on]="p.publicada" (click)="alternarPublicada(p)">
+        {{ p.publicada ? 'Publicada' : 'Oculta' }}
+      </button>
+      <button class="btn-fantasma" (click)="editar(p)">Editar</button>
+      <button class="btn-fantasma peligro" (click)="eliminar(p)">Borrar</button>
+    </div>
+  } @empty {
+    <p class="suave">Todavía no hay películas. Cargá la primera.</p>
+  }
+</div>

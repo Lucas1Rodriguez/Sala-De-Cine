@@ -1,0 +1,62 @@
+<main class="contenedor">
+  @if (auth.perfil(); as p) {
+    <h1>Hola, {{ p.nombre }}</h1>
+    <p class="suave">{{ p.email }}</p>
+
+    <div class="resumen-cards">
+      <section class="panel dato">
+        <span class="suave">Tus puntos</span>
+        <strong>{{ p.puntos }}</strong>
+        <span class="suave">1 punto por cada peso pagado con tarjeta. No se transfieren.</span>
+      </section>
+      <section class="panel dato">
+        <span class="suave">Tu crédito</span>
+        <strong>{{ plata(p.credito) }}</strong>
+        <span class="suave">Viene de compras canceladas. Lo usás al pagar, junto con otro medio de pago.</span>
+      </section>
+    </div>
+
+    @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+    @if (ok()) { <p class="ok" role="status">{{ ok() }}</p> }
+
+    <section class="panel lista">
+      <h2>Mis compras</h2>
+      @for (c of compras(); track c.id) {
+        <div class="fila-peli" [class.cancelada]="c.estado === 'cancelada'">
+          <div class="info">
+            <strong>{{ c.funciones.peliculas.nombre }}</strong>
+            <span class="suave">{{ fmt(c.funciones.inicio) }} · {{ plata(c.total) }}</span>
+            @if (puedeCancelar(c)) {
+              <span class="suave">Podés cancelarla hasta el {{ limite(c) }}</span>
+            }
+          </div>
+          @if (c.estado === 'cancelada') { <span class="chip peligro">Cancelada</span> }
+          @else if (c.entrada_validada_at) { <span class="chip">Ya usada</span> }
+          <a class="btn-fantasma" [routerLink]="['/entrada', c.id]">Ver entrada</a>
+          @if (puedeCancelar(c)) {
+            <button class="btn-fantasma peligro" (click)="cancelar(c)" [disabled]="cancelando() === c.id">
+              {{ cancelando() === c.id ? 'Cancelando...' : 'Cancelar' }}
+            </button>
+          }
+        </div>
+      } @empty {
+        <p class="suave">{{ cargando() ? 'Cargando...' : 'Todavía no hiciste compras.' }}</p>
+      }
+    </section>
+
+    <section class="panel lista">
+      <h2>Historial de canjes</h2>
+      @for (c of canjes(); track c.id) {
+        <div class="fila-peli">
+          <div class="info">
+            <strong>{{ nombreCanje(c) }}</strong>
+            <span class="suave">{{ fmtDia(c.created_at) }}</span>
+          </div>
+          <span class="chip">-{{ c.puntos_gastados }} pts</span>
+        </div>
+      } @empty {
+        <p class="suave">{{ cargando() ? 'Cargando...' : 'Todavía no canjeaste puntos.' }}</p>
+      }
+    </section>
+  }
+</main>

@@ -1,0 +1,59 @@
+<main class="contenedor">
+  @if (cargando()) {
+    <p class="suave">Cargando entrada...</p>
+  } @else if (error() && !orden()) {
+    <p>{{ error() }}</p>
+    <a routerLink="/" class="btn-fantasma">Volver a la cartelera</a>
+  } @else if (orden(); as o) {
+    @if (o.estado === 'cancelada') {
+      <h1>Compra cancelada</h1>
+      <p class="suave">El importe de esta compra se acreditó como crédito en tu cuenta. Esta entrada ya no es válida.</p>
+    } @else {
+      <h1>¡Compra confirmada!</h1>
+      <p class="suave">Presentá este QR en la entrada, o decile el código al empleado si el lector no funciona.</p>
+    }
+
+    <article class="ticket" [class.cancelado]="o.estado === 'cancelada'" [attr.data-genero]="acento()">
+      <div class="ticket-datos">
+        <span class="chip">ÓRBITA CINE{{ genero() ? ' · ' + genero() : '' }}</span>
+        <h2>{{ o.funciones.peliculas.nombre }}</h2>
+        <p>{{ fmt(o.funciones.inicio) }}</p>
+        <p>{{ o.funciones.salas.nombre }} · {{ o.funciones.formato }} · {{ o.funciones.idioma === 'castellano' ? 'Castellano' : 'Subtitulada' }}</p>
+        <p>Butacas: <strong>{{ butacas() }}</strong></p>
+        @if (candy()) { <p>Candy: <strong>{{ candy() }}</strong> @if (o.estado === 'pagada') { <span class="suave">(se retira con este mismo QR)</span> }</p> }
+        <p>Total pagado: <strong>{{ plata(o.total) }}</strong></p>
+        @if (o.funciones.peliculas.clasificacion_edad) {
+          <p class="aviso">
+            Película +{{ o.funciones.peliculas.clasificacion_edad }}: los menores deben asistir acompañados de un adulto.
+          </p>
+        }
+      </div>
+      @if (o.estado === 'pagada') {
+        <div class="ticket-qr">
+          @if (qr()) { <img [src]="qr()" alt="Código QR de tu entrada" /> }
+          <span class="suave">Código manual</span>
+          <strong class="codigo">{{ o.codigo }}</strong>
+        </div>
+      }
+    </article>
+
+    @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+
+    <div class="acciones">
+      @if (o.estado === 'pagada') {
+        <button class="btn" (click)="descargar()" [disabled]="generando()">
+          {{ generando() ? 'Generando PDF...' : 'Descargar PDF' }}
+        </button>
+      }
+      <a routerLink="/" class="btn-fantasma">Volver a la cartelera</a>
+      @if (auth.perfil()) { <a routerLink="/perfil" class="btn-fantasma">Mi perfil</a> }
+    </div>
+
+    @if (o.estado === 'pagada' && o.puntos_ganados) {
+      <p class="suave">Sumaste {{ o.puntos_ganados }} puntos con esta compra.</p>
+    }
+    @if (o.estado === 'pagada' && !auth.perfil()) {
+      <p class="aviso">Guardá el PDF: como invitado, si cerrás o borrás esta sesión no vas a poder volver a ver la entrada.</p>
+    }
+  }
+</main>
